@@ -64,24 +64,13 @@ async function checkJobs(page) {
   for (const job of jobs) {
     if (!job.link || seenJobs.has(job.link)) continue;
 
-    const title = job.title.toLowerCase();
-    const location = job.location.toLowerCase();
+const title = job.title.toLowerCase();
+const location = job.location.toLowerCase();
 
-    console.log("📍 Checking:", job.title, "|", job.location);
+console.log("📍 Checking:", job.title, "|", job.location);
 
-    // ✅ INCLUDE warehouse-type roles
-    if (
-      !title.includes("warehouse") &&
-      !title.includes("fulfillment") &&
-      !title.includes("sortation")
-    ) continue;
-
-    // ❌ EXCLUDE unwanted roles
-    if (
-      title.includes("manager") ||
-      title.includes("engineer") ||
-      title.includes("driver")
-    ) continue;
+// ✅ TEMP TEST: allow ALL jobs
+// (we are testing if scraping works)
 
     // 🎯 LOCATION FILTER (~25km)
     const isNearby = TARGET_LOCATIONS.some(loc =>
