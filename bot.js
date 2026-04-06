@@ -69,9 +69,18 @@ const location = job.location.toLowerCase();
 
 console.log("📍 Checking:", job.title, "|", job.location);
 
-// ✅ TEMP TEST: allow ALL jobs
-// (we are testing if scraping works)
+// ✅ EXACT ROLE MATCHING
+const validRoles = [
+  "fulfillment centre warehouse associate",
+  "sortation centre warehouse associate",
+  "delivery station warehouse associate",
+  "xl warehouse associate"
+];
 
+// Check if title matches ANY of the exact roles
+const isValidRole = validRoles.some(role => title.includes(role));
+
+if (!isValidRole) continue;
     // 🎯 LOCATION FILTER (~25km)
     const isNearby = TARGET_LOCATIONS.some(loc =>
       location.includes(loc)
