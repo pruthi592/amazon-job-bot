@@ -1,8 +1,9 @@
 const { chromium } = require("playwright");
 const fs = require("fs");
+const fetch = require("node-fetch");
 
 // ===== CONFIG =====
-const CHECK_INTERVAL = 2 * 60 * 1000;
+const CHECK_INTERVAL = 2 * 60 * 1000; // 2 min
 
 // 🎯 ~25km AREA (Brampton + nearby)
 const TARGET_LOCATIONS = [
@@ -12,7 +13,8 @@ const TARGET_LOCATIONS = [
   "bolton",
 ];
 
-const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1490749883135819899/N8JMx2kAbRKYKqeK8JmezPDlOMA4s0pVfHj628dT12PtqnSgQhxeHf6jcWDnkkEV5NQK"; // 🔥 paste your webhook here
+// 🔔 DISCORD WEBHOOK
+const DISCORD_WEBHOOK = "https://discord.com/api/webhooks/1490824568221204551/F-87np1Ehnjk7hHjTaWwoT047K7AAW8sx1qyGlo1pSkE_gvfchGNnPhXW8i4a_jI50aM";
 
 // ===== LOAD SEEN JOBS =====
 let seenJobs = new Set();
@@ -26,17 +28,19 @@ function saveJobs() {
 }
 
 // ===== SEND ALERT =====
-async function sendAlert(jobTitle, jobLink) {
+async function sendAlert(jobTitle, jobLocation, jobLink) {
   console.log("🚨 New Job Found:", jobTitle);
 
-  if (DISCORD_WEBHOOK !== "https://discord.com/api/webhooks/1490749883135819899/N8JMx2kAbRKYKqeK8JmezPDlOMA4s0pVfHj628dT12PtqnSgQhxeHf6jcWDnkkEV5NQK") {
+  try {
     await fetch(DISCORD_WEBHOOK, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        content: `🚨 Warehouse Job Found!\n${jobTitle}\n${jobLink}`
+        content: `🚨 **NEW AMAZON JOB**\n\n📦 ${jobTitle}\n📍 ${jobLocation}\n🔗 ${jobLink}`
       })
     });
+  } catch (err) {
+    console.error("❌ Discord error:", err.message);
   }
 }
 
@@ -64,39 +68,37 @@ async function checkJobs(page) {
   for (const job of jobs) {
     if (!job.link || seenJobs.has(job.link)) continue;
 
-const title = job.title.toLowerCase();
-const location = job.location.toLowerCase();
+    const title = job.title.toLowerCase();
+    const location = job.location.toLowerCase();
 
-console.log("📍 Checking:", job.title, "|", job.location);
+    console.log("📍 Checking:", job.title, "|", job.location);
 
-// ✅ EXACT ROLE MATCHING
-const validRoles = [
-  "fulfillment centre warehouse associate",
-  "sortation centre warehouse associate",
-  "delivery station warehouse associate",
-  "xl warehouse associate"
-];
+    // ✅ EXACT ROLE MATCHING
+    const validRoles = [
+      "fulfillment centre warehouse associate",
+      "sortation centre warehouse associate",
+      "delivery station warehouse associate",
+      "xl warehouse associate"
+    ];
 
-// Check if title matches ANY of the exact roles
-const isValidRole = validRoles.some(role => title.includes(role));
+    const isValidRole = validRoles.some(role => title.includes(role));
+    if (!isValidRole) continue;
 
-if (!isValidRole) continue;
     // 🎯 LOCATION FILTER (~25km)
     const isNearby = TARGET_LOCATIONS.some(loc =>
       location.includes(loc)
     );
-
     if (!isNearby) continue;
 
     // ✅ SAVE + ALERT
     seenJobs.add(job.link);
     saveJobs();
 
-    await sendAlert(job.title, job.link);
+    await sendAlert(job.title, job.location, job.link);
 
     console.log(`✅ MATCH: ${job.title} - ${job.location}`);
 
-    // 👉 OPEN JOB
+    // 👉 OPEN JOB (optional)
     await page.goto(job.link, { waitUntil: "domcontentloaded" });
 
     console.log("👉 APPLY manually");
@@ -106,7 +108,7 @@ if (!isValidRole) continue;
 
 // ===== LOOP =====
 async function runBot() {
-  const browser = await chromium.launch({ headless: true }); // 🔥 headless for cloud
+  const browser = await chromium.launch({ headless: true });
   const page = await browser.newPage();
 
   while (true) {
