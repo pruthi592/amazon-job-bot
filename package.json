@@ -1,8 +1,13 @@
 {
   "name": "amazon-job-bot",
   "version": "1.0.0",
+  "description": "Amazon warehouse job checker",
   "main": "bot.js",
+  "scripts": {
+    "start": "node bot.js"
+  },
   "dependencies": {
-    "playwright": "^1.42.0"
+    "playwright": "^1.59.1",
+    "node-fetch": "^2.6.7"
   }
 }
