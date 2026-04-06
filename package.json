@@ -1,0 +1,8 @@
+{
+  "name": "amazon-job-bot",
+  "version": "1.0.0",
+  "main": "bot.js",
+  "dependencies": {
+    "playwright": "^1.42.0"
+  }
+}
